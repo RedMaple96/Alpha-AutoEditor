@@ -1,0 +1,42 @@
+{
+  "name": "alpha-auto-editor-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "@yume-chan/adb": "^2.5.1",
+    "@yume-chan/adb-credential-web": "^2.1.0",
+    "@yume-chan/adb-daemon-webusb": "^2.3.2",
+    "@yume-chan/adb-scrcpy": "^2.3.2",
+    "@yume-chan/scrcpy": "^2.3.0",
+    "@yume-chan/scrcpy-decoder-tinyh264": "^2.1.0",
+    "@yume-chan/scrcpy-decoder-webcodecs": "^2.5.0",
+    "@yume-chan/stream-extra": "^2.1.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.2.1",
+    "zustand": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.20",
+    "@types/react": "^18.2.56",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^9.39.2",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.4"
+  }
+}
