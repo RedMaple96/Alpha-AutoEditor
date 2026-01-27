@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 
 APP_NAME="alpha-auto-editor-dev"
 PID_FILE="/tmp/${APP_NAME}.pid"
@@ -21,7 +21,7 @@ release_lock() {
 
 # 判断 PID 是否存活
 is_pid_alive() {
-  local pid="$1"
+  pid="$1"
   if kill -0 "$pid" >/dev/null 2>&1; then
     return 0
   fi
@@ -30,14 +30,14 @@ is_pid_alive() {
 
 # 平滑停止进程
 terminate_pid() {
-  local pid="$1"
+  pid="$1"
   if ! is_pid_alive "$pid"; then
     return 0
   fi
   kill "$pid" >/dev/null 2>&1 || true
-  local waited=0
+  waited=0
   while is_pid_alive "$pid"; do
-    if [[ "$waited" -ge 10 ]]; then
+    if [ "$waited" -ge 10 ]; then
       kill -9 "$pid" >/dev/null 2>&1 || true
       break
     fi
@@ -52,14 +52,13 @@ main() {
   fi
   trap release_lock EXIT
 
-  if [[ ! -f "$PID_FILE" ]]; then
+  if [ ! -f "$PID_FILE" ]; then
     echo "未找到运行中的后台服务"
     exit 0
   fi
 
-  local pid=""
-  pid="$(cat "$PID_FILE" || true)"
-  if [[ -z "${pid:-}" ]]; then
+  pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+  if [ -z "${pid:-}" ]; then
     rm -f "$PID_FILE"
     echo "PID 文件为空，已清理"
     exit 0

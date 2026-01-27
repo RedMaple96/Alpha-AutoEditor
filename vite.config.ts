@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,5 +24,12 @@ export default defineConfig({
       "@yume-chan/scrcpy-decoder-tinyh264",
       "@yume-chan/scrcpy-decoder-webcodecs",
     ],
+  },
+  server: {
+    host: true,
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, '.cert/localhost.key')),
+      cert: fs.readFileSync(path.resolve(__dirname, '.cert/localhost.crt')),
+    },
   },
 })
