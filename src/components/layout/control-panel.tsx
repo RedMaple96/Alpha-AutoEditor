@@ -138,7 +138,7 @@ export function ControlPanel() {
                 <div className="space-y-2">
                     <div className="text-[10px] text-zinc-400">采样时长</div>
                     <div className="grid grid-cols-3 gap-2">
-                        {[2000, 5000, 10000].map((value) => (
+                        {[2000, 5000, 10000, 15000, 20000, 30000].map((value) => (
                             <Button
                                 key={`duration-${value}`}
                                 variant={sampleDurationMs === value ? "cyber" : "secondary"}
