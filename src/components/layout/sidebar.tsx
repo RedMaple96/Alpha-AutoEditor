@@ -15,6 +15,13 @@ export function Sidebar() {
     setError(null);
     setLoading(true);
     try {
+      if (!window.isSecureContext) {
+        throw new Error(`WebUSB 仅在安全上下文可用，请使用 https 或 http://localhost 访问。当前地址: ${window.location.origin}`);
+      }
+      if (!('usb' in navigator)) {
+        throw new Error("当前浏览器不支持 WebUSB");
+      }
+
       const Manager = AdbDaemonWebUsbDeviceManager.BROWSER;
       if (!Manager) {
         throw new Error("当前浏览器不支持 WebUSB");
