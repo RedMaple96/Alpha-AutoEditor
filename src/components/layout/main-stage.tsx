@@ -4,6 +4,7 @@ import { useDeviceStore } from '@/stores/device-store';
 import { useEditorStore } from '@/stores/editor-store';
 import { Scan } from 'lucide-react';
 import { useScrcpy } from '@/hooks/use-scrcpy';
+import { captureDeviceScreen } from '@/lib/adb-utils';
 
 export function MainStage() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export function MainStage() {
   const [fitScale, setFitScale] = useState(1);
   
   // 使用 Scrcpy hook
-  const { streamSize, canvas: videoCanvas } = useScrcpy({
+  const { streamSize, deviceSize, canvas: videoCanvas } = useScrcpy({
     device,
   });
 
@@ -78,22 +79,31 @@ export function MainStage() {
 
   const handleCapture = async (mode: 'region' | 'full') => {
     if (captureInProgressRef.current) return;
-    if (!videoCanvas) return;
-
-    const width = videoCanvas.width;
-    const height = videoCanvas.height;
-    if (width === 0 || height === 0) return;
+    if (!device) return;
 
     captureInProgressRef.current = true;
     setCapturing(true);
     setCapturingProgress(0);
 
     try {
+        // 使用 ADB 截图获取真实分辨率图像（替代视频流截图）
+        const firstFrame = await captureDeviceScreen(device);
+        const width = firstFrame.width;
+        const height = firstFrame.height;
+
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = width;
         tempCanvas.height = height;
         const ctxTemp = tempCanvas.getContext('2d', { willReadFrequently: true });
-        if (!ctxTemp) return;
+        
+        if (!ctxTemp) {
+            firstFrame.close();
+            return;
+        }
+
+        // 绘制第一帧
+        ctxTemp.drawImage(firstFrame, 0, 0);
+        firstFrame.close();
 
         const applyDynamicTransparency = (target: Uint8ClampedArray, compare: Uint8ClampedArray, threshold: number) => {
             for (let i = 0; i < target.length; i += 4) {
@@ -109,17 +119,24 @@ export function MainStage() {
         const diffThreshold = 30;
 
         const captureSequence = async (sx: number, sy: number, sw: number, sh: number) => {
-            ctxTemp.drawImage(videoCanvas, 0, 0);
+            // 第一帧已经绘制在 ctxTemp 中
             const baseData = ctxTemp.getImageData(sx, sy, sw, sh);
             const startTime = performance.now();
             let nextTime = startTime + sampleIntervalMs;
             setCapturingProgress(0);
+            
+            // 如果需要多帧采样（去除动态背景）
             while (performance.now() - startTime < sampleDurationMs) {
                 const delay = Math.max(0, nextTime - performance.now());
                 if (delay > 0) {
                     await waitMs(delay);
                 }
-                ctxTemp.drawImage(videoCanvas, 0, 0);
+                
+                // 获取新的一帧
+                const nextFrame = await captureDeviceScreen(device);
+                ctxTemp.drawImage(nextFrame, 0, 0);
+                nextFrame.close();
+                
                 const compareData = ctxTemp.getImageData(sx, sy, sw, sh);
                 applyDynamicTransparency(baseData.data, compareData.data, diffThreshold);
                 const elapsed = Math.min(sampleDurationMs, performance.now() - startTime);
@@ -139,6 +156,8 @@ export function MainStage() {
 
         if (mode === 'region') {
             if (!selection) return;
+            // selection 是基于视频流尺寸的，可能略小于真实分辨率（如 2336 vs 2340）
+            // 直接使用坐标是可以的，因为通常是从左上角对齐，缺失的像素在右下角
             const sx = Math.max(0, Math.min(selection.x, width - 1));
             const sy = Math.max(0, Math.min(selection.y, height - 1));
             const sw = Math.max(1, Math.min(selection.width, width - sx));
@@ -153,6 +172,7 @@ export function MainStage() {
             const ctxResult = resultCanvas.getContext('2d');
             if (!ctxResult) return;
             ctxResult.putImageData(regionData, 0, 0);
+
             const dataUrl = resultCanvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.download = buildFileName();

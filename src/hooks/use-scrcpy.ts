@@ -9,6 +9,24 @@ import { ReadableStream } from "@yume-chan/stream-extra";
 const SERVER_URL = '/scrcpy-server.jar?v=1.24';
 const DEVICE_SERVER_PATH = '/data/local/tmp/scrcpy-server.jar';
 
+const parseWmSize = (output: string) => {
+  const match = output.match(/Physical size:\s*(\d+)\s*x\s*(\d+)/i)
+    ?? output.match(/Override size:\s*(\d+)\s*x\s*(\d+)/i)
+    ?? output.match(/(\d+)\s*x\s*(\d+)/i);
+  if (!match) return null;
+  return { width: Number(match[1]), height: Number(match[2]) };
+};
+
+const getDevicePhysicalSize = async (device: Adb) => {
+  const shellProtocol = device.subprocess.shellProtocol;
+  if (shellProtocol) {
+    const result = await shellProtocol.spawnWaitText("wm size");
+    return parseWmSize(result.stdout);
+  }
+  const output = await device.subprocess.noneProtocol.spawnWaitText("wm size");
+  return parseWmSize(output);
+};
+
 interface UseScrcpyOptions {
   device: Adb | null;
 }
@@ -16,6 +34,7 @@ interface UseScrcpyOptions {
 export function useScrcpy({ device }: UseScrcpyOptions) {
   const [isRunning, setIsRunning] = useState(false);
   const [streamSize, setStreamSize] = useState<{width: number, height: number} | null>(null);
+  const [deviceSize, setDeviceSize] = useState<{width: number, height: number} | null>(null);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   
   const decoderRef = useRef<ScrcpyVideoDecoder | null>(null);
@@ -27,6 +46,11 @@ export function useScrcpy({ device }: UseScrcpyOptions) {
 
     try {
       setIsRunning(true);
+
+      const physicalSize = await getDevicePhysicalSize(device);
+      if (physicalSize) {
+        setDeviceSize(physicalSize);
+      }
 
       // 1. 推送 Scrcpy Server
       console.log("[Scrcpy] Pushing server...");
@@ -153,6 +177,7 @@ export function useScrcpy({ device }: UseScrcpyOptions) {
     }
     setIsRunning(false);
     setStreamSize(null);
+    setDeviceSize(null);
     setCanvas(null);
   }, []);
 
@@ -179,6 +204,7 @@ export function useScrcpy({ device }: UseScrcpyOptions) {
   return {
     isRunning,
     streamSize,
+    deviceSize,
     canvas,
     start,
     stop
