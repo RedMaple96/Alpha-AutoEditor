@@ -121,7 +121,7 @@ export function ControlPanel() {
                 <div className="space-y-2">
                     <div className="text-[10px] text-zinc-400">采样间隔</div>
                     <div className="grid grid-cols-3 gap-2">
-                        {[1, 10, 50, 100, 200].map((value) => (
+                        {[5, 10, 50, 100, 200].map((value) => (
                             <Button
                                 key={`interval-${value}`}
                                 variant={sampleIntervalMs === value ? "cyber" : "secondary"}
